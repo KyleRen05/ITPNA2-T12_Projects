@@ -10,12 +10,14 @@ PORT = 5001
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 """ CLIENT REQUEST """
-print(f"What item are you looking for? ('exit' to end program)")
-req_item = input()
+#print(f"What item are you looking for? ('exit' to end program)")
+#req_item = input()
 
-while True:
-    try:
-        client.connect((CLIENT_IP, PORT))
+try:
+    client.connect((CLIENT_IP, PORT))
+    while True:     
+        print(f"What item are you looking for? ('exit' to end program)")
+        req_item = input()
         client.send(req_item.encode())
 
         data = client.recv(1024)
@@ -27,11 +29,8 @@ while True:
         if req_item.lower() == "exit":
             time.sleep(1)
             break
-        else:
-            continue
         
-    except:
-        print(f"Error: Connection to server failed")
-        break
+except:
+    print(f"Error: Connection to server failed")
 
 client.close()

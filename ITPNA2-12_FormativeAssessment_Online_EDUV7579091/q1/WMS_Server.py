@@ -22,13 +22,15 @@ items = {
     "Toolkit": 72,
     "Sandpaper": 0
 }
-in_stock = False
+in_stock = 1
 
 
-while True:
-    try:
-        client, client_addr = server.accept()
-        
+try:
+    
+    client, client_addr = server.accept()
+    print(f"Connecting to client {client_addr[0]}:{PORT}")
+
+    while True:
         client_req = client.recv(1024).decode()
 
         print(f"Searching for {client_req}")
@@ -36,27 +38,29 @@ while True:
         
         for item in items:
             if client_req in items and items[client_req] > 0:
-                in_stock = True
+                in_stock = 1
+                break
             else:
-                in_stock = False
+                in_stock = 0
         
-        if in_stock == True:
-            client.send(f"{client_req}: {items[client_req]}".encode())
-            
-        elif client_req.lower() == "exit":
+        
+        if client_req.lower() == "exit":
             print(f"Exiting program . . .")
             client.send(f"Exiting program . . .".encode())
+            time.sleep(1)
+            break
 
+        if in_stock == 1:
+            client.send(f"{client_req}: {items[client_req]}".encode())
+            print(f"{client_req}: {items[client_req]}")
+            
         else:
-            client.send(f"{client_req} is not available".encode())
-
-        time.sleep(1)
-        break
+            client.send(f"{client_req} is not available\n".encode())
+            print(f"{client_req} not found")
 
 
-    except Exception as e:
-        print(f"Error:  {e}")
-        break
+except:
+    print(f"Connection Failed")
 
     #except KeyboardInterrupt:
     #    print("Keyboard Interrupt")
