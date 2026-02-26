@@ -1,68 +1,49 @@
 """ SERVER SIDE """
 import socket
 import time
-
-""" NETWORKING PORTION """
+import threading
 
 SERVER_IP = '127.0.0.1'
-PORT = 5001
+PORT = 5500
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind((SERVER_IP, PORT))
-
-server.listen()
-
-""" WAREHOUSE PORTION"""
-
-items = {
-    "Screws": 10,
-    "Nails": 50,
-    "2x4 Plank": 25,
-    "Sheet Metal": 400,
-    "Toolkit": 72,
-    "Sandpaper": 0
-}
-in_stock = 1
-
-
-try:
-    
-    client, client_addr = server.accept()
-    print(f"Connecting to client {client_addr[0]}:{PORT}")
+def handle_client(client_socket, client_address):
+    print(f"Connected to {client_address}")
 
     while True:
-        client_req = client.recv(1024).decode()
+        try:
+             data = client_socket.recv(1024).decode('utf-8')
+             print(f"Client {client_address} connected successfully!")
 
-        print(f"Searching for {client_req}")
-        client.send(f"\nChecking for product . . .".encode())
-        
-        for item in items:
-            if client_req in items and items[client_req] > 0:
-                in_stock = 1
-                break
-            else:
-                in_stock = 0
-        
-        
-        if client_req.lower() == "exit":
-            print(f"Exiting program . . .")
-            client.send(f"Exiting program . . .".encode())
-            time.sleep(1)
-            break
-
-        if in_stock == 1:
-            client.send(f"{client_req}: {items[client_req]}".encode())
-            print(f"{client_req}: {items[client_req]}")
-            
-        else:
-            client.send(f"{client_req} is not available\n".encode())
-            print(f"{client_req} not found")
+             # Client Exit Code
+             if data == "exit":
+                 break
+        except:
+            print("Error")
 
 
-except:
-    print(f"Connection Failed")
+def start_server():
+    """Start TCP Server"""
 
-    #except KeyboardInterrupt:
-    #    print("Keyboard Interrupt")
-    #    server.close()
-server.close()
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    server_socket.bind((SERVER_IP, PORT))
+
+    server_socket.listen()
+
+    print(f'=' * 20)
+    print(" TCP Chat Server Started")
+    print("=" * 20)
+    print(f" Listening on {SERVER_IP}:{PORT}")
+
+    try:
+        while True:
+            client_socket, client_address = server_socket.accept()
+
+
+    except KeyboardInterrupt:
+        print(f"\n\n Server interrupted by keyboard input")
+
+    finally:
+        client_socket.closee()
+        server_socket.close()
