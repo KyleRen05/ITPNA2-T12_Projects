@@ -25,7 +25,7 @@ def start_client():
                 client_socket.sendall("Exit".encode('utf-8'))
                 break
 
-            if message.strip():
+            if message:
                 client_socket.sendall(message.encode('utf-8'))
 
                 reply = client_socket.recv(1024).decode('utf-8')

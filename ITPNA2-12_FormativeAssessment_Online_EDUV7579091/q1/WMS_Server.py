@@ -16,20 +16,19 @@ items = {
 }
 
 def handle_client(client_socket, client_address):
-    print(f"Connected to {client_address}")
     global server_running
 
-    while True:
-        try:
+    try:
+        print(f"Client {client_address} connected")
+        while True:
             data = client_socket.recv(1024).decode('utf-8').strip()
-            print(f"Client {client_address} connected successfully!")
 
             # in case client presses enter
             if not data:
                 continue
 
              # Client Exit Code
-            if data == "exit":
+            if data.lower().strip() == "exit":
                 print(f" [DISCONNECT] {client_address} sent the exit code.")
                 server_running = False
                 break
@@ -40,13 +39,13 @@ def handle_client(client_socket, client_address):
             else:
                 message = f"[ITEM NOT FOUND] {data} is not in stock"
 
-            client_socket.sendall((message + "\n").encode('utf-8'))
+            client_socket.sendall((f"{message}\n").encode('utf-8'))
+            print(f"{message}\n")
                     
-        except ConnectionResetError:
-            print(f"Error: Client Closed Connection Upbruptly")
-        except Exception as e:
-            print(f"Error: {e}")
-    client_socket.close()
+    except ConnectionResetError:
+        print(f"Error: Client Closed Connection Upbruptly")
+    except Exception as e:
+        print(f"Error: {e}")
 
 
 def start_server():
@@ -72,7 +71,6 @@ def start_server():
         while server_running == True:
 
             try:
-
                 client_socket, client_address = server_socket.accept()
                 
                 # When client connects, remove timeout
