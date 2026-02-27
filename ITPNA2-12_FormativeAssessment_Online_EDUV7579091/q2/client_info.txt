@@ -1,0 +1,2 @@
+Steve | Paris | 5
+John | Cape Town | 2
