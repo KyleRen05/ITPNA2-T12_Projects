@@ -1,2 +1,4 @@
 Steve | Paris | 5
 John | Cape Town | 2
+Susan | Chicago | 7
+Tom | Sydney | 1

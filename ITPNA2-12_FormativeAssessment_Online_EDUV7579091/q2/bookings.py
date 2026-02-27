@@ -42,7 +42,7 @@ def order_data():
     print(f"{' NAME':<20} {'DESTINATION':<20} {'PASSENGERS':<20} PRICE")
     print("=" * 70)
     for client in client_data:
-        output = f" {client[0]:<20} {client[1]:<24} {client[2]:<16} {client[3]}\n"
+        output = f" {client[0]:<20} {client[1]:<24} {client[2]:<15} ${client[3]}\n"
         print(output)
     
 
@@ -57,15 +57,13 @@ def start_booking():
         if selection == 'A':
             write_ln = handle_input()
             handle_file(write_ln)
+            print("Client Added Successfully\n")
         elif selection == 'B':
             order_data()
         elif selection == 'C':
             break
         else:
             print("Please Enter a Valid Option\n")
-
-
-
 
 
 if __name__ == "__main__":
