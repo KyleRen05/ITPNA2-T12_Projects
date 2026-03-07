@@ -27,23 +27,25 @@ def start_client():
         client_socket.connect((SERVER_IP, SERVER_PORT))
         print("Connected to Server\n")
 
+        print(f"Please Enter your Name:\n")
+        name = input()
+        client_socket.sendall(name.encode('utf-8'))
+
         while True:
             print("Would you like to send or request a file?")
             print(" (1) SEND FILE\n (2) REQUEST FILE\n (3) EXIT PROGRAM\n")
             selection = input()
+            client_socket.sendall(selection.encode('utf-8'))
 
             if selection == '1':
-                client_socket.sendall(selection.encode('utf-8'))
-                print("Please enter file path of the file you want to send:\n")
+                print("Please enter file path of the file you want to send:")
                 file_path = input()
                 send_files(file_path)
             elif selection == '2':
-                client_socket.sendall(selection.encode('utf-8'))
-                print("Please enter reuqested file name:\n")
+                print("Please enter reuqested file name:")
                 file_name = input()
                 req_files(file_name)
             elif selection == '3':
-                client_socket.sendall(selection.encode('utf-8'))
                 print("[EXIT] Exit Condition Met\nClosing Client Connection")
                 break
 
