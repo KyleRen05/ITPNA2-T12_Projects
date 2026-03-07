@@ -4,10 +4,14 @@ import os
 
 SERVER_IP = '127.0.0.1'
 SERVER_PORT = 5001
+FILE_STORE = "files"
 
 connected_clients = []
 client_names = {}
 
+if not os.path.exists(FILE_STORE):
+    os.makedirs(FILE_STORE)
+    print(f"[CREATED] Directory: {FILE_STORE}")
 
 def handle_client(client_socket, client_address):
     # handles connecting clients
@@ -36,8 +40,41 @@ def handle_client(client_socket, client_address):
 def send_files():
     return
 
-def rec_files():
-    return
+def rec_files(file_name, client_socket, client_address, client_name):
+    try:
+        print(f"[RECEIVING...] {file_name} from {client_name}")
+        print(f"\t({client_address[0]}:{client_address[1]})")
+
+        file_size = int(client_socket.recv(1024).decode('utf-8'))
+        print(f"\tSize: {file_size:,} bytes ({file_size/1024:.2f} KB)")
+
+        file_path = os.path.join(FILE_STORE, file_name)
+
+        bytes_received = 0
+
+        with open(file_path, 'wb') as file:
+            print(f"   Receiving data...", end='', flush=True)
+
+            while bytes_received < file_size:
+                bytes_to_read = min(4096, file_size - bytes_received)
+                chunk = client_socket.recv(bytes_to_read)
+
+                if not chunk:
+                    print("NOT CHUNK")
+                    break
+                
+                file.write(chunk)
+                bytes_received += len(chunk)
+                if bytes_received % 102400 == 0:
+                    progress = (bytes_received / file_size) * 100
+                    print(f"\r   Progress: {progress:.1f}%", end='', flush=True)
+            
+        print(f"\r   Progress: 100.0%")
+
+        if bytes_received == file_size:
+            client.socket.sendall
+
+
 
 def start_server():
     # Handles server

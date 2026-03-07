@@ -6,11 +6,39 @@ SERVER_IP = '127.0.0.1'
 SERVER_PORT = 5001
 
 
-def send_files(file_path):
-    print(f"[SENDING...] {file_path} to {SERVER_IP}")
-    return
+def send_files(file_path, client_socket):
+    try:
+        if not os.path.exists(file_path):
+            print(f"[ERROR] File not found: {file_path}")
+            return
+        file_name = os.path.basename(file_path)
+        file_size = os.path.getsize(file_path)
 
-def req_files(file_name):
+        print(f"[SENDING...] {file_name} to {SERVER_IP}")
+        client_socket.sendall(file_name.encode('utf-8'))
+
+        print(f"[SENDING...] {file_size} to {SERVER_IP}")
+        client_socket.sendall(str(file_size).encode('utf-8'))
+
+        bytes_sent = 0
+        with open(file_path, 'rb') as file:
+            while bytes_sent < file_size:
+                chunk = file.read(4096)
+                if not chunk:
+                    break
+
+                client_socket.senall(chunk)
+                bytes_sent += len(chunk)
+                progress = (bytes_sent / file_size) * 100
+                print(f"\rProgress: {progress:.1f}%", end='', flush=True)
+
+            print(f"\rProgress: 100.0%")
+            print(f" Sent {bytes_sent:,} bytes\n")
+    except Exception as e:
+        print(f"[ERROR] Send file: {e}")
+
+
+def req_files(file_name, client_socket):
     print(f"[REQUEST] {file_name} from {SERVER_IP}")
     return
 
@@ -40,11 +68,11 @@ def start_client():
             if selection == '1':
                 print("Please enter file path of the file you want to send:")
                 file_path = input()
-                send_files(file_path)
+                send_files(file_path, client_socket)
             elif selection == '2':
                 print("Please enter reuqested file name:")
                 file_name = input()
-                req_files(file_name)
+                req_files(file_name, client_socket)
             elif selection == '3':
                 print("[EXIT] Exit Condition Met\nClosing Client Connection")
                 break
