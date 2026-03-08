@@ -5,9 +5,12 @@ import os
 SERVER_IP = '127.0.0.1'
 SERVER_PORT = 5001
 
+FILE_STORE = 'client_files'
+
 
 def send_files(file_path, client_socket):
     try:
+        file_path = os.path.join(FILE_STORE, file_path)
         if not os.path.exists(file_path):
             print(f"[ERROR] File not found: {file_path}")
             return
@@ -40,8 +43,48 @@ def send_files(file_path, client_socket):
 
 
 def req_files(file_name, client_socket):
-    print(f"[REQUEST] {file_name} from {SERVER_IP}")
-    return
+    try:
+        print(f"[REQUEST] {file_name} from {SERVER_IP}")
+        client_socket.sendall(file_name.encode('utf-8'))
+
+        file_size = int(client_socket.recv(1024).decode('utf-8'))
+        print(f"\tSize: {file_size:,} bytes ({file_size/1024:.2f} KB)")
+
+        file_path = os.path.join(FILE_STORE, file_name)
+
+        bytes_received = 0
+
+        with open(file_path, 'wb') as file:
+            print(f"   Receiving data...", end='', flush=True)
+
+            while bytes_received < file_size:
+                bytes_to_read = min(4096, file_size - bytes_received)
+                chunk = client_socket.recv(bytes_to_read)
+
+                if not chunk:
+                    print("\nNOT CHUNK")
+                    break
+                
+                file.write(chunk)
+                bytes_received += len(chunk)
+                if bytes_received % 102400 == 0:
+                    progress = (bytes_received / file_size) * 100
+                    print(f"\r   Progress: {progress:.1f}%", end='', flush=True)
+            
+        print(f"\r   Progress: 100.0%")
+
+        if bytes_received == file_size:
+            print(f"[SAVED] {file_path}")
+            print(f"[COMPLETE] {bytes_received:,} bytes\n")
+        else:
+            print(f"[INCOMPLETE] File Transfer Incomplete {bytes_received}/{file_size}")
+
+    except Exception as e:
+        print(f"[ERROR] Cannot Receive File\n{e}")
+
+
+
+
 
 def start_client():
     #Start client side
@@ -71,7 +114,7 @@ def start_client():
                 file_path = input()
                 send_files(file_path, client_socket)
             elif selection.strip() == '2':
-                print("Please enter reuqested file name:")
+                print("Please enter requested file name:")
                 file_name = input()
                 req_files(file_name, client_socket)
             elif selection.strip() == '3':

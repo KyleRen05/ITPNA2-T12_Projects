@@ -4,7 +4,7 @@ import os
 
 SERVER_IP = '127.0.0.1'
 SERVER_PORT = 5001
-FILE_STORE = "files"
+FILE_STORE = "server_files"
 
 connected_clients = []
 client_names = {}
@@ -29,6 +29,8 @@ def handle_client(client_socket, client_address):
                 rec_files(file_name, client_socket, client_address, client_name)
             elif selection.strip() == '2':
                 print(f"[SEND] {client_name} wants to receive a file\n")
+                file_path = client_socket.recv(1024).decode('utf-8')
+                send_files(file_path, client_socket, client_name)
             elif selection.strip() == '3':
                 print(f"[CLIENT DISCONNECT] {client_name} ({client_address[0]}) disconnected from the server")
                 break
@@ -39,8 +41,40 @@ def handle_client(client_socket, client_address):
     except Exception as e:
         print(f"[ERROR] {e}")
 
-def send_files():
-    return
+def send_files(file_path, client_socket, client_name):
+    try:
+        file_path = os.path.join(FILE_STORE, file_path)
+
+        if not os.path.exists(file_path):
+            print(f"[ERROR] File not found: {file_path}")
+            return
+        
+        file_name = os.path.basename(file_path)
+        file_size = os.path.getsize(file_path)
+
+        #print(f"[SENDING...] {file_name} to {SERVER_IP}")
+        #client_socket.sendall(file_name.encode('utf-8'))
+
+        print(f"[SENDING...] {file_size} bytes to {client_name}")
+        client_socket.sendall(str(file_size).encode('utf-8'))
+
+        bytes_sent = 0
+        with open(file_path, 'rb') as file:
+            while bytes_sent < file_size:
+                chunk = file.read(4096)
+                if not chunk:
+                    break
+
+                client_socket.sendall(chunk)
+                bytes_sent += len(chunk)
+                progress = (bytes_sent / file_size) * 100
+                print(f"\rProgress: {progress:.1f}%", end='', flush=True)
+
+            print(f"\rProgress: 100.0%")
+            print(f" Sent {bytes_sent:,} bytes\n")
+
+    except Exception as e:
+        print(f"[ERROR] Could not send file\n{e}")
 
 def rec_files(file_name, client_socket, client_address, client_name):
     try:
