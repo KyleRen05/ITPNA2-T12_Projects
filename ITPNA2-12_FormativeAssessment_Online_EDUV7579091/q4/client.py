@@ -11,13 +11,14 @@ def send_files(file_path, client_socket):
         if not os.path.exists(file_path):
             print(f"[ERROR] File not found: {file_path}")
             return
+        
         file_name = os.path.basename(file_path)
         file_size = os.path.getsize(file_path)
 
         print(f"[SENDING...] {file_name} to {SERVER_IP}")
         client_socket.sendall(file_name.encode('utf-8'))
 
-        print(f"[SENDING...] {file_size} to {SERVER_IP}")
+        print(f"[SENDING...] {file_size} bytes to {SERVER_IP}")
         client_socket.sendall(str(file_size).encode('utf-8'))
 
         bytes_sent = 0
@@ -27,7 +28,7 @@ def send_files(file_path, client_socket):
                 if not chunk:
                     break
 
-                client_socket.senall(chunk)
+                client_socket.sendall(chunk)
                 bytes_sent += len(chunk)
                 progress = (bytes_sent / file_size) * 100
                 print(f"\rProgress: {progress:.1f}%", end='', flush=True)
@@ -65,15 +66,15 @@ def start_client():
             selection = input()
             client_socket.sendall(selection.encode('utf-8'))
 
-            if selection == '1':
+            if selection.strip() == '1':
                 print("Please enter file path of the file you want to send:")
                 file_path = input()
                 send_files(file_path, client_socket)
-            elif selection == '2':
+            elif selection.strip() == '2':
                 print("Please enter reuqested file name:")
                 file_name = input()
                 req_files(file_name, client_socket)
-            elif selection == '3':
+            elif selection.strip() == '3':
                 print("[EXIT] Exit Condition Met\nClosing Client Connection")
                 break
 
