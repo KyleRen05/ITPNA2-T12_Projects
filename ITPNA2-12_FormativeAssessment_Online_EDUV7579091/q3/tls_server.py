@@ -7,19 +7,6 @@ CERT_FILE = 'server-cert.pem'
 KEY_FILE = 'server-key.pem'
 
 def create_server():
-
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-    server_socket.bind((SERVER, PORT))
-
-    server_socket.listen(5)
-
-    return server_socket
-
-
-def create_context():
-
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 
     try:
@@ -31,7 +18,16 @@ def create_context():
 
     context.minimum_version = ssl.TLSVersion.TLSv1_2
 
-    return context
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    server_socket.bind((SERVER, PORT))
+
+    server_socket.listen(5)
+
+    server_socket.settimeout(1.0)
+
+    return server_socket, context
 
 
 def handle_client(client_socket, client_address):
@@ -69,13 +65,23 @@ def start_server():
     print(f"Certificate: {CERT_FILE}")
     print(f"Private Key: {KEY_FILE}")
 
-    server = create_server()
+    server, context= create_server()
 
     try:
-        raw_client_socket, client_address = server.accept()
         while True:
-            secure_client_socket = create_context().wrap_socket(raw_client_socket, server_side=True)
-            handle_client(secure_client_socket, client_address)
+            try:
+                raw_client_socket, client_address = server.accept()
+                secure_client_socket = context.wrap_socket(raw_client_socket, server_side=True)
+                handle_client(secure_client_socket, client_address)
+                raw_client_socket.close()
+
+            except socket.timeout:
+                continue
+
+    except ssl.SSLError as e:
+        print(f"[SECURITY ALERT] Handshake failed for {client_address[0]}")
+        print(f"Clear failure message: Unauthorized or bad certificate. Details: {e}")
+        #raw_client_socket.close()
 
     except Exception as e:
         print(f"[ERROR] SERVER ERROR: {e}")
@@ -84,6 +90,7 @@ def start_server():
         print("\n\nServer Stopped by user")
 
     finally:
+        raw_client_socket.close()
         server.close()
         print("Server Socket Closed")
 
