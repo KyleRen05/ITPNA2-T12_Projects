@@ -1,7 +1,7 @@
 {
-    "aircraft_status": "Ready for Departure",
-    "passenger_boarding_number": 128,
+    "aircraft_status": "Boarding",
+    "passenger_boarding_number": 130,
     "fueling": "Complete",
-    "door_state": "Closed",
+    "door_state": "Open",
     "push_back_time": "13:45"
 }
