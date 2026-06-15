@@ -1,7 +1,45 @@
 import json
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
-import mysql.connector
+import sqlite3
+
+PORT = 8000
+
+def init_db():
+    conn = sqlite3.connect('aviation.db')
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS in_flight_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+            autopilot_status TEXT,
+            cabin_pressure_psi REAL,
+            wifi_usage_mb INTEGER
+        )
+    ''')
+
+    cursor.execute("SELECT COUNT(*) FROM in_flight_events")
+    if cursor.fetchone()[0] == 0:
+        cursor.execute('''
+            INSERT INTO in_flight_events (autopilot_status, cabin_pressure_psi, wifi_usage_mb)
+            VALUES 
+                ('Engaged', 11.80, 450),
+                ('Engaged', 11.82, 512),
+                ('Disengaged', 11.75, 530)
+        ''')
+        conn.commit()
+        print(f"[SYSTEM] New Aviation Database Created with Dummy Data")
+    
+    else:
+        print("[SYSTEM] Existing aviation.db found. Skipping build phase.")
+    conn.close()
+
+
+
+init_db()
+print("SQLite Database verified/built successfully.")
+
 
 class FlightHandler(BaseHTTPRequestHandler):
 
@@ -35,21 +73,14 @@ class FlightHandler(BaseHTTPRequestHandler):
         # Q1.4
         elif parsed_path == '/events':
             try:
-                conn = mysql.connector.connect(
-                    host='localhost',
-                    user='root',
-                    password='',
-                    database='aviation_db'
-                )        
+                conn = sqlite3.connect('aviation.db')
 
-                cursor = conn.cursor(dictionary=True)
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
 
                 cursor.execute("SELECT * FROM in_flight_events")
-                records = cursor.fetchall()
-
-                for row in records:
-                    row['event_time'] = str(row['event_time'])
-                    row['cabin_pressure_psi'] = float(row['cabin_pressure_psi'])
+                
+                records = [dict(row) for row in cursor.fetchall()]
 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
@@ -60,7 +91,7 @@ class FlightHandler(BaseHTTPRequestHandler):
                 cursor.close()
                 conn.close()
 
-            except mysql.connector.Error as err:
+            except sqlite3.Error as err:
                 self.send_response(500)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
@@ -103,6 +134,49 @@ class FlightHandler(BaseHTTPRequestHandler):
                 error_msg = {"status": "error", "message": f"Failed to update data: {str(e)}"}
                 self.wfile.write(json.dumps(error_msg).encode('utf-8'))
 
+        elif parsed_path == '/events':
+            try:
+                content_length = int(self.headers['Content-Length'])        
+
+                post_data = self.rfile.read(content_length)
+
+                data = json.loads(post_data)
+
+                conn = sqlite3.connect('aviation.db')
+                cursor = conn.cursor()
+
+                sql = """
+                    INSERT INTO in_flight_events
+                    (autopilot_status, cabin_pressure_psi, wifi_usage_mb)
+                    VALUES (?, ?, ?)
+                """
+
+                values = (
+                    data.get('autopilot_status', 'Unknown'),
+                    data.get('cabin_pressure_psi', 0.0),
+                    data.get('wifi_usage_mb', 0.0)
+                )
+
+                cursor.execute(sql, values)
+
+                conn.commit()
+
+                cursor.close()
+                conn.close()
+
+                self.send_response(201) 
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "success", "message": "Data saved"}).encode('utf-8'))
+
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))
+
+
+
         else:
             self.send_response(404)
             self.send_header('Content-type', 'text/plain')
@@ -110,7 +184,7 @@ class FlightHandler(BaseHTTPRequestHandler):
             self.wfile.write(b"404 Not Found: The requested endpoint does not exist.")
 
 if __name__ == '__main__':
-    server_address = ('localhost', 8000)
+    server_address = ('localhost', PORT)
 
     httpd = HTTPServer(server_address, FlightHandler)
 
