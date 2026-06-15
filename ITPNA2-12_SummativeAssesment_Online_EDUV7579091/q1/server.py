@@ -1,6 +1,7 @@
 import json
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
+import mysql.connector
 
 class FlightHandler(BaseHTTPRequestHandler):
 
@@ -30,6 +31,42 @@ class FlightHandler(BaseHTTPRequestHandler):
                 self.send_header('Content-type', 'text/plain')
                 self.end_headers()
                 self.wfile.write(b"[SERVER ERROR] flight_data.json file not found.")
+
+        # Q1.4
+        elif parsed_path == '/events':
+            try:
+                conn = mysql.connector.connect(
+                    host='localhost',
+                    user='root',
+                    password='',
+                    database='aviation_db'
+                )        
+
+                cursor = conn.cursor(dictionary=True)
+
+                cursor.execute("SELECT * FROM in_flight_events")
+                records = cursor.fetchall()
+
+                for row in records:
+                    row['event_time'] = str(row['event_time'])
+                    row['cabin_pressure_psi'] = float(row['cabin_pressure_psi'])
+
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+
+                self.wfile.write(json.dumps(records, indent=4).encode('utf-8'))
+
+                cursor.close()
+                conn.close()
+
+            except mysql.connector.Error as err:
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                error_msg = {"status": "error", "message": f"Database connection failed: {err}"}
+                self.wfile.write(json.dumps(error_msg).encode('utf-8'))
+
 
         else:
             self.send_response(404)
