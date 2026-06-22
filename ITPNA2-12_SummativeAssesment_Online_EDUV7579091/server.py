@@ -175,16 +175,22 @@ class FlightHandler(BaseHTTPRequestHandler):
 
                 data = json.loads(post_data)
 
+                values = (
+                    data.get('autopilot_status', 'Unknown'),
+                    data.get('cabin_pressure_psi', 0.0),
+                    data.get('wifi_usage_mb', 0.0)
+                )
+
                 # Question 3 - SENDING EMAIL ALERT
-                # Extract file variables
-                autopilot = data.get('autopilot_status', "Unknown")
-                pressure = float(data.get('cabin_presssure_psi', 0.0))
-                wifi = int(data.get('wifi_usage_mb', 0))
+                # unpacking tuple variables
+                autopilot = values[0]
+                pressure = values[1]
+                wifi = values[2]
 
                 # Evaluate variables and thresholds
                 if pressure < 11.0 or pressure > 13.0:
                     email_alerts("Cabin Pressure", f"{pressure} PSI", "Cabin Pressure Out of Range")
-
+            
                 if autopilot != "Engaged":
                     email_alerts("Autopilot Status", autopilot, "Autopilot disengaged")
                 
@@ -201,10 +207,11 @@ class FlightHandler(BaseHTTPRequestHandler):
                 """
 
                 values = (
-                    autopilot,
-                    pressure,
-                    wifi
+                    data.get('autopilot_status', 'Unknown'),
+                    data.get('cabin_pressure_psi', 0.0),
+                    data.get('wifi_usage_mb', 0.0)
                 )
+
 
                 cursor.execute(sql, values)
 

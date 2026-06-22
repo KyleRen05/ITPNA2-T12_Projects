@@ -11,7 +11,7 @@ MAX_WIFI_MB = 900 # keeping below 900MB can help flag potential anomolies and pr
 URL = 'http://localhost:8000/events'
 
 
-print("-- AIRLINE-SAFETY-MONITORING-SYSTEM --")
+print("-- AIRLINE SAFETY MONITORING SYSTEM --")
 
 # -- Question 2.1 e -- Run continuously --
 while True:
