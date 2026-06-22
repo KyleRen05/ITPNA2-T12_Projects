@@ -2,6 +2,9 @@ import json
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
 import sqlite3
+import smtplib
+from email.message import EmailMessage
+from datetime import datetime
 
 PORT = 8000
 
@@ -39,6 +42,36 @@ def init_db():
 
 init_db()
 print("SQLite Database verified/built successfully.")
+
+
+# --- QUESTION 3 - EMAIL ALERT IMPLEMENTATION ---
+def email_alerts(parameter, value, description):
+    ''' SENDS A REAL SMTP EMAIL OVER LOCAL NETWORK FOR TESTING '''
+    current_time = datetime.now().strftime("%H:%M:%S")
+
+    msg = EmailMessage()
+    msg['Subject'] = f"CRITICAL ALERT: {description}"
+    msg['From'] = "system@aeroarilines.com"
+    msg['To'] = "monitoring@aeroairlines.com"
+
+    body = f"""AERO AIRLINES - AUTOMATED SAFETY ALERT
+==================================================
+ALERT: {description}
+Parameter: {parameter}
+Recorded Value: {value}
+Time of Event: {current_time}
+==================================================
+Action: Immediate assessment required.
+""" 
+
+    msg.set_content(body)
+
+    try:
+        with smtplib.SMTP('localhost', 1025) as server:
+            server.send_message(msg)
+        print(f"[SYSTEM] Alert successfully transmitted for {parameter}.")
+    except ConnectionRefusedError:
+        print(f"[ERROR] Local SMTP server is not running. Alert Not Sent.")
 
 
 class FlightHandler(BaseHTTPRequestHandler):
@@ -142,6 +175,22 @@ class FlightHandler(BaseHTTPRequestHandler):
 
                 data = json.loads(post_data)
 
+                # Question 3 - SENDING EMAIL ALERT
+                # Extract file variables
+                autopilot = data.get('autopilot_status', "Unknown")
+                pressure = float(data.get('cabin_presssure_psi', 0.0))
+                wifi = int(data.get('wifi_usage_mb', 0))
+
+                # Evaluate variables and thresholds
+                if pressure < 11.0 or pressure > 13.0:
+                    email_alerts("Cabin Pressure", f"{pressure} PSI", "Cabin Pressure Out of Range")
+
+                if autopilot != "Engaged":
+                    email_alerts("Autopilot Status", autopilot, "Autopilot disengaged")
+                
+                if wifi > 900:
+                    email_alerts("WiFi Usage", f"{wifi} MB", "Abnormal Network Bandwidth")
+
                 conn = sqlite3.connect('aviation.db')
                 cursor = conn.cursor()
 
@@ -152,9 +201,9 @@ class FlightHandler(BaseHTTPRequestHandler):
                 """
 
                 values = (
-                    data.get('autopilot_status', 'Unknown'),
-                    data.get('cabin_pressure_psi', 0.0),
-                    data.get('wifi_usage_mb', 0.0)
+                    autopilot,
+                    pressure,
+                    wifi
                 )
 
                 cursor.execute(sql, values)
@@ -170,6 +219,8 @@ class FlightHandler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({"status": "success", "message": "Data saved"}).encode('utf-8'))
 
             except Exception as e:
+                print(f"\n[CRASH REPORT] Server Failed: {e}")
+                
                 self.send_response(500)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
