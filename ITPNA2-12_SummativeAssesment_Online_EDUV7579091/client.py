@@ -2,6 +2,8 @@ import json
 import urllib.request
 import urllib.error
 
+# QUESTION 1.2
+
 def fetch_flight_data():
     url = 'http://localhost:8000/flight'
 
@@ -30,7 +32,7 @@ def fetch_flight_data():
 
     except Exception as e:
         print(f"An unexcpected error as occured: {e}")
-    
+
 
 if __name__ == '__main__':
     fetch_flight_data()

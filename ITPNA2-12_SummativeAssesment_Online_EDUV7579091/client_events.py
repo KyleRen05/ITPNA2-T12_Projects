@@ -1,5 +1,7 @@
 import requests
 
+# -- QUESTION 1.5 -- CLIENT SIDE FOR /events API
+
 def fetch_flight_events():
     url = 'http://localhost:8000/events'
 

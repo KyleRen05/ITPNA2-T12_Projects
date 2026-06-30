@@ -2,6 +2,7 @@ import requests
 import time
 import random
 
+# -- Question 1.6 -- live data simulator
 url = 'http://localhost:8000/events'
 
 print("Starting Automated Flight Simulator")

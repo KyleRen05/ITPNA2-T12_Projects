@@ -8,6 +8,8 @@ from datetime import datetime
 
 PORT = 8000
 
+# --- QUESTION 1.4 ---
+
 def init_db():
     conn = sqlite3.connect('aviation.db')
     cursor = conn.cursor()
@@ -103,7 +105,7 @@ class FlightHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(b"[SERVER ERROR] flight_data.json file not found.")
 
-        # Q1.4
+        # -- QUESTION 1.4 -- DB CONNECTION TO API
         elif parsed_path == '/events':
             try:
                 conn = sqlite3.connect('aviation.db')
@@ -167,6 +169,7 @@ class FlightHandler(BaseHTTPRequestHandler):
                 error_msg = {"status": "error", "message": f"Failed to update data: {str(e)}"}
                 self.wfile.write(json.dumps(error_msg).encode('utf-8'))
 
+        # -- Question 1.6 -- /events POST METHOD
         elif parsed_path == '/events':
             try:
                 content_length = int(self.headers['Content-Length'])        
